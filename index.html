@@ -10,7 +10,6 @@
             background: black;
             overflow: hidden;
             font-family: Arial, sans-serif;
-            touch-action: none;
         }
         canvas {
             display: block;
@@ -30,7 +29,7 @@
             font-size: 14px;
             margin-top: 10px;
         }
-        .id-panel, .error-panel {
+        .id-panel {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -46,7 +45,7 @@
             color: #e6e6ff;
             backdrop-filter: blur(5px);
         }
-        .id-panel header, .error-panel header {
+        .id-panel header {
             padding: 15px;
             background: linear-gradient(45deg, #c0c0c0, #b300ff);
             color: white;
@@ -69,7 +68,7 @@
             outline: none;
             box-shadow: 0 0 8px rgba(179, 0, 255, 0.5);
         }
-        .id-panel button, .error-panel button {
+        .id-panel button {
             width: 100%;
             padding: 12px;
             border-radius: 12px;
@@ -80,11 +79,11 @@
             cursor: pointer;
             transition: background 0.3s ease, transform 0.2s ease;
         }
-        .id-panel button:hover, .error-panel button:hover {
+        .id-panel button:hover {
             background: linear-gradient(45deg, #a8a8a8, #9900e6);
             transform: scale(1.05);
         }
-        .id-panel .error, .error-panel .error {
+        .id-panel .error {
             color: #b300ff;
             background: rgba(179, 0, 255, 0.2);
             font-size: 1em;
@@ -140,57 +139,18 @@
             background: linear-gradient(45deg, #a8a8a8, #9900e6);
             transform: scale(1.05);
         }
-        .mobile-controls {
-            position: fixed;
-            bottom: 5vw; /* Dynamic positioning for both orientations */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90vw; /* Use viewport width for responsiveness */
-            max-width: 400px;
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 100;
-        }
-        .mobile-controls div {
-            background: rgba(26, 10, 59, 0.8);
-            padding: 10px;
-            border-radius: 12px;
-            color: #e6e6ff;
-            font-size: 14px;
-            text-align: center;
-        }
-        .mobile-controls input[type="range"] {
-            width: 100%;
-            -webkit-appearance: none;
-            background: transparent;
-        }
-        .mobile-controls input[type="range"]::-webkit-slider-runnable-track {
-            height: 8px;
-            background: linear-gradient(90deg, #c0c0c0, #b300ff);
-            border-radius: 4px;
-        }
-        .mobile-controls input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #e6e6ff;
-            border-radius: 50%;
-            margin-top: -6px;
-            cursor: pointer;
-        }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
         @media (max-width: 600px) {
-            .id-panel, .error-panel {
-                width: 95vw;
+            .id-panel {
+                width: 95%;
             }
-            .id-panel header, .error-panel header {
+            .id-panel header {
                 font-size: 1em;
             }
-            .id-panel input, .id-panel button, .error-panel button {
+            .id-panel input, .id-panel button {
                 font-size: 0.9em;
                 padding: 10px;
             }
@@ -205,22 +165,6 @@
             .audio-control button {
                 padding: 6px 10px;
                 font-size: 0.8em;
-            }
-            .mobile-controls {
-                display: flex;
-            }
-            .zoom-info {
-                display: none;
-            }
-        }
-        @media (orientation: landscape) {
-            .mobile-controls {
-                bottom: 2vw; /* Closer to bottom in landscape */
-                width: 70vw; /* Narrower in landscape */
-                max-width: 300px;
-            }
-            .mobile-controls div {
-                font-size: 12px; /* Smaller text in landscape */
             }
         }
     </style>
@@ -237,27 +181,12 @@
         <button onclick="cargarDatos()">Cargar Universo</button>
         <div id="mensaje"></div>
     </div>
-    <div class="error-panel" id="errorPanel" style="display: none;">
-        <header>Error</header>
-        <div class="error">Ocurrió un error al cargar. Presiona el botón para borrar el caché y reintentar.</div>
-        <button onclick="clearCacheAndReload()">Borrar Caché</button>
-    </div>
     <div class="loader" id="loader">
         <div class="loader-circle"></div>
         <div class="loader-text">Cargando...</div>
     </div>
     <div class="audio-control" id="audioControl" style="display: none;">
         <button id="audioToggle" onclick="toggleAudio()">🔊</button>
-    </div>
-    <div class="mobile-controls" id="mobileControls">
-        <div>
-            Zoom
-            <input type="range" id="zoomSlider" min="0.1" max="20" step="0.1" value="5">
-        </div>
-        <div>
-            Mover Arriba/Abajo
-            <input type="range" id="moveSlider" min="-2" max="2" step="0.01" value="0">
-        </div>
     </div>
     <audio id="backgroundMusic" loop>
         <source src="mus/1.mp4" type="audio/mp3">
@@ -284,9 +213,6 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Detectar si es un dispositivo móvil
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
         // Variables globales para los datos
         let nombrePlaneta = "DEYSI";
         let frasesGirando = [
@@ -294,7 +220,7 @@
             'Mi amor eterno', 'Tú y yo', 'Por siempre', 'Eres mi luz',
             'Juntos forever', 'Mi corazón'
         ];
-        let fotosGirando = ['https://i.imgur.com/5f5gT1h.jpg'].slice(0, isMobile ? 3 : 5);
+        let fotosGirando = ['https://i.imgur.com/5f5gT1h.jpg'];
         let estrellaFugaz = 'https://i.imgur.com/5f5gT1h.jpg';
         const defaultTextureUrl = 'https://i.imgur.com/5f5gT1h.jpg';
 
@@ -302,8 +228,7 @@
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.z = 5;
-        const renderer = new THREE.WebGLRenderer({ antialias: !isMobile });
-        renderer.setPixelRatio(isMobile ? 1 : window.devicePixelRatio);
+        const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
@@ -320,8 +245,8 @@
 
         // Variables de la visualización
         const radius = 1;
-        const numCircles = isMobile ? 30 : 40;
-        const namesPerCircle = isMobile ? 30 : 50;
+        const numCircles = 60;
+        const namesPerCircle = 80;
         const textSize = 0.02;
         const textMeshes = [];
         const ringGroups = [];
@@ -330,7 +255,6 @@
         let flashPlane = null;
         let eventTriggered = false;
         let eventStartTime = 0;
-        let isLoading = false;
 
         // Geometría y material para la estrella fugaz y cometa
         const crystalGeometry = new THREE.OctahedronGeometry(0.5, 1);
@@ -340,8 +264,8 @@
         const flashGeometry = new THREE.PlaneGeometry(30, 30);
 
         // Fondo de estrellas
-        const starCount = isMobile ? 500 : 1000;
         const starGeometry = new THREE.BufferGeometry();
+        const starCount = 2000;
         const starPositions = new Float32Array(starCount * 3);
         const starColors = new Float32Array(starCount * 3);
         for (let i = 0; i < starCount; i++) {
@@ -355,11 +279,11 @@
         }
         starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
         starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-        const starMaterial = new THREE.PointsMaterial({ vertexColors: true, size: isMobile ? 0.03 : 0.05 });
+        const starMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 0.1 });
         const stars = new THREE.Points(starGeometry, starMaterial);
         scene.add(stars);
 
-        // Efecto de aurora boreal (restaurado a la versión original)
+        // Efecto de aurora boreal
         const auroraGeometry = new THREE.PlaneGeometry(200, 100);
         const auroraMaterial = new THREE.ShaderMaterial({
             uniforms: { time: { value: 0.0 } },
@@ -388,7 +312,7 @@
                 }
                 void main() {
                     vec2 p = vUv * vec2(1.0, 5.0) + vec2(0.0, time * 0.1);
-                    float n = noise(p * 4.0);
+                    float n = noise(p * 2.0) * 0.5 + noise(p * 4.0) * 0.25 + noise(p * 8.0) * 0.125;
                     float intensity = sin(vUv.y * 3.1416) * n;
                     vec3 color = mix(vec3(0.0, 0.8, 0.2), vec3(0.8, 0.0, 0.8), intensity);
                     gl_FragColor = vec4(color, intensity * 0.5);
@@ -400,13 +324,12 @@
         });
         const aurora = new THREE.Mesh(auroraGeometry, auroraMaterial);
         aurora.position.z = -50;
-        aurora.visible = !isMobile; // Disable aurora on mobile during initial load
         scene.add(aurora);
 
         // Luces dinámicas
         const lights = [];
-        for (let i = 0; i < 2; i++) {
-            const light = new THREE.PointLight(0xFFFFFF, 0.5, 50);
+        for (let i = 0; i < 3; i++) {
+            const light = new THREE.PointLight(0xFFFFFF, 0.7, 50);
             light.position.set(
                 (Math.random() - 0.5) * 20,
                 (Math.random() - 0.5) * 20,
@@ -421,7 +344,7 @@
             uniforms: {
                 glowColor: { value: new THREE.Color(0xFFFFFF) },
                 accentColor: { value: new THREE.Color(0xFFFF99) },
-                glowIntensity: { value: isMobile ? 1.5 : 2.0 },
+                glowIntensity: { value: 4.0 },
                 time: { value: 0.0 }
             },
             vertexShader: `
@@ -441,10 +364,10 @@
                 varying vec3 vNormal;
                 varying vec3 vPosition;
                 void main() {
-                    float intensity = pow(0.9 - dot(vNormal, vec3(0, 0, 1)), 2.0) * glowIntensity;
-                    float pulse = 0.5 + 0.5 * abs(sin(time * 4.0));
-                    vec3 color = mix(glowColor, accentColor, 0.2);
-                    gl_FragColor = vec4(color * pulse, 1.0) + vec4(color * intensity * 2.0, 1.0);
+                    float intensity = pow(0.9 - dot(vNormal, vec3(0, 0, 1)), 3.0) * glowIntensity;
+                    float pulse = 0.3 + 0.7 * abs(sin(time * 6.0));
+                    vec3 color = mix(glowColor, accentColor, 0.2 * sin(time + vPosition.x));
+                    gl_FragColor = vec4(color * pulse, 1.0) + vec4(color * intensity * 5.0, 1.0);
                 }
             `,
             side: THREE.DoubleSide,
@@ -457,13 +380,15 @@
                 map: { value: null },
                 glowColor: { value: new THREE.Color(0xFFFFFF) },
                 accentColor: { value: new THREE.Color(0xFFFF99) },
-                glowIntensity: { value: isMobile ? 1.0 : 1.5 },
+                glowIntensity: { value: 2.5 },
                 time: { value: 0.0 }
             },
             vertexShader: `
                 varying vec2 vUv;
+                varying vec3 vNormal;
                 void main() {
                     vUv = uv;
+                    vNormal = normalize(normalMatrix * normal);
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
             `,
@@ -474,12 +399,20 @@
                 uniform float glowIntensity;
                 uniform float time;
                 varying vec2 vUv;
+                varying vec3 vNormal;
                 void main() {
                     vec4 texColor = texture2D(map, vUv);
-                    float edge = max(abs(vUv.x - 0.5), abs(vUv.y - 0.5));
-                    float glow = pow(edge, 2.0) * glowIntensity * (0.7 + 0.3 * sin(time * 2.0));
-                    vec3 finalColor = texColor.rgb + mix(glowColor, accentColor, 0.3) * glow * 0.5;
-                    gl_FragColor = vec4(finalColor, texColor.a);
+                    if (texColor.a < 0.1) {
+                        float edge = max(abs(vUv.x - 0.5), abs(vUv.y - 0.5));
+                        float glow = pow(edge, 2.0) * glowIntensity * (0.7 + 0.3 * sin(time * 2.0));
+                        vec3 finalColor = mix(glowColor, accentColor, 0.3) * glow * 0.7;
+                        gl_FragColor = vec4(finalColor, 0.5);
+                    } else {
+                        float edge = max(abs(vUv.x - 0.5), abs(vUv.y - 0.5));
+                        float glow = pow(edge, 2.0) * glowIntensity * (0.7 + 0.3 * sin(time * 2.0));
+                        vec3 finalColor = texColor.rgb + mix(glowColor, accentColor, 0.3) * glow * 0.7;
+                        gl_FragColor = vec4(finalColor, texColor.a);
+                    }
                 }
             `,
             side: THREE.DoubleSide,
@@ -491,7 +424,7 @@
             uniforms: {
                 glowColor: { value: new THREE.Color(0xFFFFFF) },
                 accentColor: { value: new THREE.Color(0xFFFF99) },
-                glowIntensity: { value: isMobile ? 1.5 : 2.0 },
+                glowIntensity: { value: 4.0 },
                 time: { value: 0.0 }
             },
             vertexShader: `
@@ -511,10 +444,10 @@
                 varying vec3 vNormal;
                 varying vec3 vPosition;
                 void main() {
-                    float intensity = pow(0.9 - dot(vNormal, vec3(0, 0, 1)), 2.0) * glowIntensity;
-                    float pulse = 0.5 + 0.5 * abs(sin(time * 4.0));
+                    float intensity = pow(0.9 - dot(vNormal, vec3(0, 0, 1)), 3.0) * glowIntensity;
+                    float pulse = 0.5 + 0.5 * abs(sin(time * 5.0));
                     vec3 color = mix(glowColor, accentColor, 0.2);
-                    gl_FragColor = vec4(color * pulse, 1.0) + vec4(color * intensity * 2.0, 1.0);
+                    gl_FragColor = vec4(color * pulse, 1.0) + vec4(color * intensity * 3.0, 1.0);
                 }
             `,
             side: THREE.DoubleSide,
@@ -540,7 +473,7 @@
                 varying vec2 vUv;
                 void main() {
                     float intensity = 1.0 - pow(length(vUv - 0.5), 1.2);
-                    gl_FragColor = vec4(1.0, 1.0, 0.9, opacity * intensity);
+                    gl_FragColor = vec4(1.0, 1.0, 0.9, opacity * intensity * 1.5);
                 }
             `,
             side: THREE.DoubleSide,
@@ -560,7 +493,7 @@
                 void main() {
                     vColor = color;
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = size * ${isMobile ? '0.3' : '0.5'};
+                    gl_PointSize = size;
                 }
             `,
             fragmentShader: `
@@ -572,42 +505,14 @@
                     float dist = length(gl_PointCoord - vec2(0.5));
                     if (dist > 0.5) discard;
                     float intensity = 1.0 - dist / 0.5;
-                    float pulse = 0.5 + 0.5 * sin(time * 2.0);
+                    float pulse = 0.5 + 0.5 * sin(time * 3.0);
                     vec3 color = mix(glowColor, accentColor, 0.2) * intensity * pulse;
-                    gl_FragColor = vec4(color, intensity * 0.6);
+                    gl_FragColor = vec4(color, intensity * 0.8);
                 }
             `,
             transparent: true,
             vertexColors: true
         });
-
-        // Función para limpiar caché y recargar
-        window.clearCacheAndReload = async function() {
-            try {
-                const cachesKeys = await caches.keys();
-                for (const key of cachesKeys) {
-                    await caches.delete(key);
-                }
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.reload(true);
-            } catch (error) {
-                console.error('Error al limpiar caché:', error);
-                window.location.reload(true);
-            }
-        };
-
-        // Función para mostrar el panel de error
-        function showErrorPanel(message) {
-            const errorPanel = document.getElementById('errorPanel');
-            const idPanel = document.getElementById('idPanel');
-            const loader = document.getElementById('loader');
-            errorPanel.querySelector('.error').textContent = message;
-            errorPanel.style.display = 'block';
-            idPanel.style.display = 'none';
-            loader.style.display = 'none';
-            isLoading = false;
-        }
 
         // Funciones para crear los elementos
         function createShootingStar() {
@@ -631,9 +536,6 @@
             const textureLoader = new THREE.TextureLoader();
             const textureUrl = estrellaFugaz.startsWith('data:image/') ? estrellaFugaz : defaultTextureUrl;
             textureLoader.load(textureUrl, (texture) => {
-                texture.generateMipmaps = true;
-                texture.minFilter = THREE.LinearMipmapLinearFilter;
-                texture.magFilter = THREE.LinearFilter;
                 const material = imageShaderMaterial.clone();
                 material.uniforms.map.value = texture;
                 cometImage = new THREE.Mesh(cometGeometry, material);
@@ -641,14 +543,16 @@
                 scene.add(cometImage);
             }, undefined, (error) => {
                 console.error('Error al cargar la textura de la estrella fugaz:', error);
-                showErrorPanel('Error al cargar recursos. Presiona el botón para borrar el caché y reintentar.');
+                const material = imageShaderMaterial.clone();
+                material.uniforms.map.value = null;
+                cometImage = new THREE.Mesh(cometGeometry, material);
+                cometImage.position.set(0, 0, 0);
+                scene.add(cometImage);
             });
         }
 
         // Función para cargar datos desde Firebase
         window.cargarDatos = async function() {
-            if (isLoading) return;
-            isLoading = true;
             const usuario = document.getElementById("usuario").value.trim().toLowerCase();
             const mensaje = document.getElementById("mensaje");
             const idPanel = document.getElementById("idPanel");
@@ -658,25 +562,20 @@
                 mensaje.innerHTML = `<div class="error">❌ Por favor, ingresa un ID.</div>`;
                 mensaje.style.opacity = '1';
                 setTimeout(() => { mensaje.style.opacity = '0'; }, 5000);
-                isLoading = false;
                 return;
             }
 
+            // Mostrar el loader
             idPanel.style.display = 'none';
             loader.style.display = 'flex';
 
-            const timeout = setTimeout(() => {
-                showErrorPanel('La carga está tomando demasiado tiempo. Presiona el botón para borrar el caché y reintentar.');
-            }, 10000);
-
             try {
                 const snapshot = await get(ref(database, "usuarios/" + usuario));
-                clearTimeout(timeout);
                 if (snapshot.exists()) {
                     const datos = snapshot.val();
                     nombrePlaneta = datos.nombrePlaneta || "DEYSI";
                     frasesGirando = datos.frasesGirando || frasesGirando;
-                    fotosGirando = (datos.fotosGirando || fotosGirando).slice(0, isMobile ? 3 : 5);
+                    fotosGirando = datos.fotosGirando || fotosGirando;
                     estrellaFugaz = datos.estrellaFugaz || estrellaFugaz;
                     fotosGirando = fotosGirando.map(url => url.startsWith('data:image/') ? url : defaultTextureUrl);
                     iniciarVisualizacion();
@@ -693,12 +592,14 @@
                     mensaje.innerHTML = `<div class="error">❌ ID no encontrado. Intenta de nuevo.</div>`;
                     mensaje.style.opacity = '1';
                     setTimeout(() => { mensaje.style.opacity = '0'; }, 5000);
-                    isLoading = false;
                 }
             } catch (error) {
                 console.error("Error al cargar datos:", error);
-                clearTimeout(timeout);
-                showErrorPanel('Error al conectar con la base de datos. Presiona el botón para borrar el caché y reintentar.');
+                loader.style.display = 'none';
+                idPanel.style.display = 'block';
+                mensaje.innerHTML = `<div class="error">❌ Error al conectar con la base de datos: ${error.message}</div>`;
+                mensaje.style.opacity = '1';
+                setTimeout(() => { mensaje.style.opacity = '0'; }, 5000);
             }
         };
 
@@ -710,24 +611,13 @@
                 const textureUrl = url.startsWith('data:image/') ? url : defaultTextureUrl;
                 try {
                     const texture = await new Promise((resolve, reject) => {
-                        textureLoader.load(textureUrl, (tex) => {
-                            tex.generateMipmaps = true;
-                            tex.minFilter = THREE.LinearMipmapLinearFilter;
-                            tex.magFilter = THREE.LinearFilter;
-                            resolve(tex);
-                        }, undefined, reject);
+                        textureLoader.load(textureUrl, resolve, undefined, reject);
                     });
                     texturas.push(texture);
                 } catch (error) {
                     console.error(`Error al cargar textura ${textureUrl}:`, error);
-                    showErrorPanel('Error al cargar recursos. Presiona el botón para borrar el caché y reintentar.');
                     const defaultTexture = await new Promise((resolve, reject) => {
-                        textureLoader.load(defaultTextureUrl, (tex) => {
-                            tex.generateMipmaps = true;
-                            tex.minFilter = THREE.LinearMipmapLinearFilter;
-                            tex.magFilter = THREE.LinearFilter;
-                            resolve(tex);
-                        }, undefined, reject);
+                        textureLoader.load(defaultTextureUrl, resolve, undefined, reject);
                     });
                     texturas.push(defaultTexture);
                 }
@@ -737,227 +627,180 @@
 
         // Función para inicializar la visualización
         async function iniciarVisualizacion() {
-            if (!isLoading) return;
             const loader = document.getElementById("loader");
-            const timeout = setTimeout(() => {
-                showErrorPanel('La inicialización está tomando demasiado tiempo. Presiona el botón para borrar el caché y reintentar.');
-            }, 10000);
 
-            try {
-                const texturasGirando = await cargarTexturas(fotosGirando);
+            // Cargar texturas de fotosGirando
+            const texturasGirando = await cargarTexturas(fotosGirando);
 
-                const fontLoader = new THREE.FontLoader();
-                fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-                    clearTimeout(timeout);
-                    const textGeometry = new THREE.TextGeometry(nombrePlaneta, {
-                        font: font,
-                        size: textSize,
-                        height: 0.001
-                    });
-
-                    for (let i = 0; i < numCircles; i++) {
-                        const phi = Math.PI * i / (numCircles - 1);
-                        const y = Math.cos(phi) * radius;
-                        const circleRadius = Math.sin(phi) * radius;
-                        for (let j = 0; j < namesPerCircle; j++) {
-                            const theta = 2 * Math.PI * j / namesPerCircle;
-                            const x = Math.cos(theta) * circleRadius;
-                            const z = Math.sin(theta) * circleRadius;
-                            const textMesh = new THREE.Mesh(textGeometry, glowShaderMaterial);
-                            textMesh.position.set(x, y, z);
-                            scene.add(textMesh);
-                            textMeshes.push(textMesh);
-                        }
-                    }
-
-                    for (let i = 0; i < numCircles / 2; i++) {
-                        const phi = 2 * Math.PI * i / (numCircles / 2);
-                        for (let j = 0; j < namesPerCircle; j++) {
-                            const theta = Math.PI * j / (namesPerCircle - 1);
-                            const x = Math.sin(theta) * Math.cos(phi) * radius;
-                            const y = Math.cos(theta) * radius;
-                            const z = Math.sin(theta) * Math.sin(phi) * radius;
-                            const textMesh = new THREE.Mesh(textGeometry, glowShaderMaterial);
-                            textMesh.position.set(x, y, z);
-                            scene.add(textMesh);
-                            textMeshes.push(textMesh);
-                        }
-                    }
-
-                    const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-                    const ringRadii = [1.6, 2.1, 2.6, 3.1, 3.6, 4.1, 4.6, 5.1];
-                    const particlesPerRing = isMobile ? [80, 90, 100, 110, 120, 130, 140, 150] : [100, 120, 140, 160, 180, 200, 220, 240];
-                    const phrasesPerRing = isMobile ? [8, 10, 12, 14, 16, 18, 20, 22] : [12, 14, 16, 18, 20, 22, 24, 26];
-                    const starsPerRing = isMobile ? [70, 80, 90, 100, 110, 120, 130, 140] : [90, 110, 130, 150, 170, 190, 210, 230];
-                    const ringThickness = 0.3;
-
-                    ringRadii.forEach((ringRadius, index) => {
-                        const ringGroup = new THREE.Group();
-                        const numImages = particlesPerRing[index];
-                        const numPhrases = phrasesPerRing[index];
-                        const numStars = starsPerRing[index];
-
-                        for (let j = 0; j < numImages; j++) {
-                            const theta = 2 * Math.PI * j / numImages;
-                            const x = ringRadius * Math.cos(theta);
-                            const z = ringRadius * Math.sin(theta);
-                            const y = (Math.random() - 0.5) * ringThickness;
-                            const textureIndex = j % texturasGirando.length;
-                            const material = imageShaderMaterial.clone();
-                            material.uniforms.map.value = texturasGirando[textureIndex];
-                            const imageMesh = new THREE.Mesh(planeGeometry, material);
-                            imageMesh.position.set(x, y, z);
-                            imageMesh.rotation.z = Math.PI / 2;
-                            ringGroup.add(imageMesh);
-                        }
-
-                        for (let j = 0; j < numPhrases; j++) {
-                            const theta = 2 * Math.PI * j / numPhrases;
-                            const x = ringRadius * Math.cos(theta);
-                            const z = Math.sin(theta) * ringRadius;
-                            const y = (Math.random() - 0.5) * ringThickness;
-                            const phraseIndex = j % frasesGirando.length;
-                            const phrase = frasesGirando[phraseIndex];
-                            const phraseGeometry = new THREE.TextGeometry(phrase, {
-                                font: font,
-                                size: textSize * 2,
-                                height: 0.001
-                            });
-                            const phraseMesh = new THREE.Mesh(phraseGeometry, glowShaderMaterial);
-                            phraseMesh.position.set(x, y, z);
-                            ringGroup.add(phraseMesh);
-                        }
-
-                        const starPositions = new Float32Array(numStars * 3);
-                        const starColors = new Float32Array(numStars * 3);
-                        const starSizes = new Float32Array(numStars);
-                        for (let j = 0; j < numStars; j++) {
-                            const theta = 2 * Math.PI * j / numStars;
-                            const x = ringRadius * Math.cos(theta);
-                            const z = Math.sin(theta) * ringRadius;
-                            const y = (Math.random() - 0.5) * ringThickness;
-                            starPositions[j * 3] = x;
-                            starPositions[j * 3 + 1] = y;
-                            starPositions[j * 3 + 2] = z;
-                            const color = new THREE.Color().setHSL(0, 0, 0.9);
-                            starColors[j * 3] = color.r;
-                            starColors[j * 3 + 1] = color.g;
-                            starColors[j * 3 + 2] = color.b;
-                            starSizes[j] = isMobile ? (0.02 + Math.random() * 0.02) : (0.03 + Math.random() * 0.03);
-                        }
-                        const starGeometry = new THREE.BufferGeometry();
-                        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-                        starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-                        starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
-                        const ringStars = new THREE.Points(starGeometry, ringStarMaterial);
-                        ringGroup.add(ringStars);
-                        scene.add(ringGroup);
-                        ringGroups.push(ringGroup);
-                    });
-
-                    loader.style.display = 'none';
-                    aurora.visible = true;
-                    isLoading = false;
-
-                    let countdown = 20;
-                    const countdownElement = document.getElementById('countdown');
-                    countdownElement.textContent = `Meteorito en ${countdown} segundos!`;
-                    const countdownInterval = setInterval(() => {
-                        countdown--;
-                        if (countdown >= 0) {
-                            countdownElement.textContent = `Meteorito en ${countdown} segundos!`;
-                        } else {
-                            countdownElement.textContent = '';
-                            clearInterval(countdownInterval);
-                            createShootingStar();
-                        }
-                    }, 1000);
-                }, undefined, (error) => {
-                    clearTimeout(timeout);
-                    showErrorPanel('Error al cargar la fuente. Presiona el botón para borrar el caché y reintentar.');
+            const fontLoader = new THREE.FontLoader();
+            fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+                // Esfera principal con nombrePlaneta
+                const textGeometry = new THREE.TextGeometry(nombrePlaneta, {
+                    font: font,
+                    size: textSize,
+                    height: 0.001
                 });
-            } catch (error) {
-                clearTimeout(timeout);
-                showErrorPanel('Error al inicializar la visualización. Presiona el botón para borrar el caché y reintentar.');
-            }
-        }
 
-        // Control de movimiento de cámara (solo para escritorio)
-        if (!isMobile) {
-            let isDragging = false;
-            let lastMouseY = 0;
-            const maxCameraY = 2;
-            let cameraY = 0;
-            document.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                lastMouseY = e.clientY;
-            });
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                const deltaY = e.clientY - lastMouseY;
-                cameraY -= deltaY * 0.01;
-                cameraY = Math.max(-maxCameraY, Math.min(maxCameraY, cameraY));
-                camera.position.y = cameraY;
-                lastMouseY = e.clientY;
-            });
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
-            document.addEventListener('mouseleave', () => {
-                isDragging = false;
-            });
-
-            document.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                camera.position.z += e.deltaY * 0.02;
-                camera.position.z = Math.max(0.1, Math.min(20, camera.position.z));
-            }, { passive: false });
-        }
-
-        // Controles móviles
-        if (isMobile) {
-            const zoomSlider = document.getElementById('zoomSlider');
-            const moveSlider = document.getElementById('moveSlider');
-            zoomSlider.addEventListener('input', () => {
-                camera.position.z = parseFloat(zoomSlider.value);
-            });
-            moveSlider.addEventListener('input', () => {
-                camera.position.y = parseFloat(moveSlider.value);
-            });
-
-            // Ajustar controles al cambiar orientación
-            function adjustMobileControls() {
-                const mobileControls = document.getElementById('mobileControls');
-                if (window.innerWidth > window.innerHeight) {
-                    // Landscape
-                    mobileControls.style.width = '70vw';
-                    mobileControls.style.maxWidth = '300px';
-                    mobileControls.style.bottom = '2vw';
-                } else {
-                    // Portrait
-                    mobileControls.style.width = '90vw';
-                    mobileControls.style.maxWidth = '400px';
-                    mobileControls.style.bottom = '5vw';
+                // Círculos horizontales (latitudes)
+                for (let i = 0; i < numCircles; i++) {
+                    const phi = Math.PI * i / (numCircles - 1);
+                    const y = Math.cos(phi) * radius;
+                    const circleRadius = Math.sin(phi) * radius;
+                    for (let j = 0; j < namesPerCircle; j++) {
+                        const theta = 2 * Math.PI * j / namesPerCircle;
+                        const x = Math.cos(theta) * circleRadius;
+                        const z = Math.sin(theta) * circleRadius;
+                        const textMesh = new THREE.Mesh(textGeometry, glowShaderMaterial);
+                        textMesh.position.set(x, y, z);
+                        scene.add(textMesh);
+                        textMeshes.push(textMesh);
+                    }
                 }
-            }
-            window.addEventListener('resize', adjustMobileControls);
-            window.addEventListener('orientationchange', adjustMobileControls);
-            adjustMobileControls(); // Inicializar posición
+
+                // Círculos verticales (longitudes)
+                for (let i = 0; i < numCircles / 2; i++) {
+                    const phi = 2 * Math.PI * i / (numCircles / 2);
+                    for (let j = 0; j < namesPerCircle; j++) {
+                        const theta = Math.PI * j / (namesPerCircle - 1);
+                        const x = Math.sin(theta) * Math.cos(phi) * radius;
+                        const y = Math.cos(theta) * radius;
+                        const z = Math.sin(theta) * Math.sin(phi) * radius;
+                        const textMesh = new THREE.Mesh(textGeometry, glowShaderMaterial);
+                        textMesh.position.set(x, y, z);
+                        scene.add(textMesh);
+                        textMeshes.push(textMesh);
+                    }
+                }
+
+                // Añadir anillos con imágenes, frases y puntos de estrellas
+                const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+                const ringRadii = [1.6, 2.1, 2.6, 3.1, 3.6, 4.1, 4.6, 5.1, 5.6, 6.1, 6.6, 7.1];
+                const particlesPerRing = [130, 150, 170, 190, 210, 230, 250, 270, 300, 340, 390, 450];
+                const phrasesPerRing = [16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38];
+                const starsPerRing = [120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 350];
+                const ringThickness = 0.3;
+
+                ringRadii.forEach((ringRadius, index) => {
+                    const ringGroup = new THREE.Group();
+                    const numImages = particlesPerRing[index];
+                    const numPhrases = phrasesPerRing[index];
+                    const numStars = starsPerRing[index];
+
+                    // Añadir imágenes
+                    for (let j = 0; j < numImages; j++) {
+                        const theta = 2 * Math.PI * j / numImages;
+                        const x = ringRadius * Math.cos(theta);
+                        const z = ringRadius * Math.sin(theta);
+                        const y = (Math.random() - 0.5) * ringThickness;
+                        const textureIndex = j % texturasGirando.length;
+                        const material = imageShaderMaterial.clone();
+                        material.uniforms.map.value = texturasGirando[textureIndex];
+                        const imageMesh = new THREE.Mesh(planeGeometry, material);
+                        imageMesh.position.set(x, y, z);
+                        imageMesh.rotation.z = Math.PI / 2;
+                        ringGroup.add(imageMesh);
+                    }
+
+                    // Añadir frases
+                    for (let j = 0; j < numPhrases; j++) {
+                        const theta = 2 * Math.PI * j / numPhrases;
+                        const x = ringRadius * Math.cos(theta);
+                        const z = Math.sin(theta) * ringRadius;
+                        const y = (Math.random() - 0.5) * ringThickness;
+                        const phraseIndex = j % frasesGirando.length;
+                        const phrase = frasesGirando[phraseIndex];
+                        const phraseGeometry = new THREE.TextGeometry(phrase, {
+                            font: font,
+                            size: textSize * 2,
+                            height: 0.001
+                        });
+                        const phraseMesh = new THREE.Mesh(phraseGeometry, glowShaderMaterial);
+                        phraseMesh.position.set(x, y, z);
+                        ringGroup.add(phraseMesh);
+                    }
+
+                    // Añadir puntos de estrellas
+                    const starPositions = new Float32Array(numStars * 3);
+                    const starColors = new Float32Array(numStars * 3);
+                    const starSizes = new Float32Array(numStars);
+                    for (let j = 0; j < numStars; j++) {
+                        const theta = 2 * Math.PI * j / numStars;
+                        const x = ringRadius * Math.cos(theta);
+                        const z = Math.sin(theta) * ringRadius;
+                        const y = (Math.random() - 0.5) * ringThickness;
+                        starPositions[j * 3] = x;
+                        starPositions[j * 3 + 1] = y;
+                        starPositions[j * 3 + 2] = z;
+                        const color = new THREE.Color().setHSL(0, 0, 0.9);
+                        starColors[j * 3] = color.r;
+                        starColors[j * 3 + 1] = color.g;
+                        starColors[j * 3 + 2] = color.b;
+                        starSizes[j] = 0.05 + Math.random() * 0.05;
+                    }
+                    const starGeometry = new THREE.BufferGeometry();
+                    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+                    starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+                    starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+                    const ringStars = new THREE.Points(starGeometry, ringStarMaterial);
+                    ringGroup.add(ringStars);
+                    scene.add(ringGroup);
+                    ringGroups.push(ringGroup);
+                });
+
+                // Ocultar el loader cuando la visualización está lista
+                loader.style.display = 'none';
+
+                // Iniciar el conteo regresivo
+                let countdown = 20;
+                const countdownElement = document.getElementById('countdown');
+                countdownElement.textContent = `Meteorito en ${countdown} segundos!`;
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    if (countdown >= 0) {
+                        countdownElement.textContent = `Meteorito en ${countdown} segundos!`;
+                    } else {
+                        countdownElement.textContent = '';
+                        clearInterval(countdownInterval);
+                        createShootingStar();
+                    }
+                }, 1000);
+            });
         }
 
-        // Animación con FPS limitado en móvil
+        // Control de movimiento de cámara
+        let isDragging = false;
+        let lastMouseY = 0;
+        const maxCameraY = 2;
+        let cameraY = 0;
+        document.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseY = e.clientY;
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const deltaY = e.clientY - lastMouseY;
+            cameraY -= deltaY * 0.01;
+            cameraY = Math.max(-maxCameraY, Math.min(maxCameraY, cameraY));
+            camera.position.y = cameraY;
+            lastMouseY = e.clientY;
+        });
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        document.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+
+        // Control de zoom
+        document.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            camera.position.z += e.deltaY * 0.02;
+            camera.position.z = Math.max(0.1, Math.min(20, camera.position.z));
+        }, { passive: false });
+
+        // Animación
         let time = 0;
-        let lastFrameTime = 0;
-        const targetFPS = isMobile ? 30 : 60;
-        const frameInterval = 1000 / targetFPS;
-
-        function animate(currentTime) {
-            if (isMobile && (currentTime - lastFrameTime) < frameInterval) {
-                requestAnimationFrame(animate);
-                return;
-            }
-            lastFrameTime = currentTime;
-
+        function animate() {
             requestAnimationFrame(animate);
             time += 0.016;
             glowShaderMaterial.uniforms.time.value = time;
@@ -967,21 +810,20 @@
             ringStarMaterial.uniforms.time.value = time;
             if (flashMaterial.uniforms) flashMaterial.uniforms.time.value = time;
 
-            if (!isMobile || time % 0.1 < 0.016) {
-                lights.forEach((light, index) => {
-                    light.position.x += Math.sin(time * 0.3 + index) * 0.05;
-                    light.position.y += Math.cos(time * 0.3 + index) * 0.05;
-                });
-            }
+            // Animar luces dinámicas
+            lights.forEach((light, index) => {
+                light.position.x += Math.sin(time * 0.5 + index) * 0.1;
+                light.position.y += Math.cos(time * 0.5 + index) * 0.1;
+            });
 
-            if (!isMobile || time % 0.05 < 0.016) {
-                textMeshes.forEach(mesh => {
-                    mesh.lookAt(camera.position);
-                });
-            }
+            // Textos apuntan a la cámara
+            textMeshes.forEach(mesh => {
+                mesh.lookAt(camera.position);
+            });
 
+            // Imágenes, frases y estrellas apuntan a la cámara y giran
             ringGroups.forEach((group) => {
-                group.rotation.y += isMobile ? 0.0005 : 0.001;
+                group.rotation.y += 0.001;
                 group.children.forEach(mesh => {
                     mesh.lookAt(camera.position);
                 });
@@ -992,6 +834,7 @@
                 cometImage.position.y = Math.sin(time * 2) * 0.2;
             }
 
+            // Manejo de la estrella fugaz
             if (shootingStar && eventTriggered) {
                 const elapsed = time - eventStartTime;
                 const t = elapsed / 2;
@@ -1010,6 +853,7 @@
                 }
             }
 
+            // Manejo del destello
             if (flashPlane) {
                 const flashTime = time - eventStartTime - 2;
                 if (flashTime > 0) {
@@ -1023,25 +867,13 @@
 
             renderer.render(scene, camera);
         }
-        animate(performance.now());
+        animate();
 
         // Ajustar tamaño de la ventana
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // Detectar errores iniciales
-        window.addEventListener('error', (event) => {
-            if (isLoading) {
-                showErrorPanel('Error al cargar recursos. Presiona el botón para borrar el caché y reintentar.');
-            }
-        });
-        window.addEventListener('unhandledrejection', (event) => {
-            if (isLoading) {
-                showErrorPanel('Error al cargar datos. Presiona el botón para borrar el caché y reintentar.');
-            }
         });
     </script>
 </body>
