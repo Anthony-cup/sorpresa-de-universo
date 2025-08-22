@@ -10,6 +10,7 @@
             background: black;
             overflow: hidden;
             font-family: Arial, sans-serif;
+            touch-action: none; /* Prevent default touch behaviors */
         }
         canvas {
             display: block;
@@ -139,6 +140,46 @@
             background: linear-gradient(45deg, #a8a8a8, #9900e6);
             transform: scale(1.05);
         }
+        /* Mobile controls */
+        .mobile-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        .mobile-controls div {
+            background: rgba(26, 10, 59, 0.8);
+            padding: 10px;
+            border-radius: 12px;
+            color: #e6e6ff;
+            font-size: 14px;
+            text-align: center;
+        }
+        .mobile-controls input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        .mobile-controls input[type="range"]::-webkit-slider-runnable-track {
+            height: 8px;
+            background: linear-gradient(90deg, #c0c0c0, #b300ff);
+            border-radius: 4px;
+        }
+        .mobile-controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #e6e6ff;
+            border-radius: 50%;
+            margin-top: -6px;
+            cursor: pointer;
+        }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -166,6 +207,12 @@
                 padding: 6px 10px;
                 font-size: 0.8em;
             }
+            .mobile-controls {
+                display: flex;
+            }
+            .zoom-info {
+                display: none; /* Hide mouse instructions on mobile */
+            }
         }
     </style>
 </head>
@@ -187,6 +234,16 @@
     </div>
     <div class="audio-control" id="audioControl" style="display: none;">
         <button id="audioToggle" onclick="toggleAudio()">🔊</button>
+    </div>
+    <div class="mobile-controls" id="mobileControls">
+        <div>
+            Zoom
+            <input type="range" id="zoomSlider" min="0.1" max="20" step="0.1" value="5">
+        </div>
+        <div>
+            Mover Arriba/Abajo
+            <input type="range" id="moveSlider" min="-2" max="2" step="0.01" value="0">
+        </div>
     </div>
     <audio id="backgroundMusic" loop>
         <source src="mus/1.mp4" type="audio/mp3">
@@ -213,6 +270,9 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
+        // Detectar si es un dispositivo móvil
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
         // Variables globales para los datos
         let nombrePlaneta = "DEYSI";
         let frasesGirando = [
@@ -228,7 +288,8 @@
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.z = 5;
-        const renderer = new THREE.WebGLRenderer();
+        const renderer = new THREE.WebGLRenderer({ antialias: !isMobile }); // Disable antialias on mobile for performance
+        renderer.setPixelRatio(isMobile ? 1 : window.devicePixelRatio); // Lower pixel ratio on mobile
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
@@ -245,8 +306,8 @@
 
         // Variables de la visualización
         const radius = 1;
-        const numCircles = 60;
-        const namesPerCircle = 80;
+        const numCircles = isMobile ? 40 : 60; // Reduced for mobile
+        const namesPerCircle = isMobile ? 50 : 80; // Reduced for mobile
         const textSize = 0.02;
         const textMeshes = [];
         const ringGroups = [];
@@ -264,8 +325,8 @@
         const flashGeometry = new THREE.PlaneGeometry(30, 30);
 
         // Fondo de estrellas
+        const starCount = isMobile ? 1000 : 2000; // Reduced for mobile
         const starGeometry = new THREE.BufferGeometry();
-        const starCount = 2000;
         const starPositions = new Float32Array(starCount * 3);
         const starColors = new Float32Array(starCount * 3);
         for (let i = 0; i < starCount; i++) {
@@ -279,11 +340,11 @@
         }
         starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
         starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-        const starMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 0.1 });
+        const starMaterial = new THREE.PointsMaterial({ vertexColors: true, size: isMobile ? 0.05 : 0.1 }); // Smaller stars on mobile
         const stars = new THREE.Points(starGeometry, starMaterial);
         scene.add(stars);
 
-        // Efecto de aurora boreal
+        // Efecto de aurora boreal (simplificado para móvil)
         const auroraGeometry = new THREE.PlaneGeometry(200, 100);
         const auroraMaterial = new THREE.ShaderMaterial({
             uniforms: { time: { value: 0.0 } },
@@ -312,7 +373,7 @@
                 }
                 void main() {
                     vec2 p = vUv * vec2(1.0, 5.0) + vec2(0.0, time * 0.1);
-                    float n = noise(p * 2.0) * 0.5 + noise(p * 4.0) * 0.25 + noise(p * 8.0) * 0.125;
+                    float n = noise(p * ${isMobile ? '2.0' : '4.0'}); // Reduced noise complexity on mobile
                     float intensity = sin(vUv.y * 3.1416) * n;
                     vec3 color = mix(vec3(0.0, 0.8, 0.2), vec3(0.8, 0.0, 0.8), intensity);
                     gl_FragColor = vec4(color, intensity * 0.5);
@@ -344,7 +405,7 @@
             uniforms: {
                 glowColor: { value: new THREE.Color(0xFFFFFF) },
                 accentColor: { value: new THREE.Color(0xFFFF99) },
-                glowIntensity: { value: 4.0 },
+                glowIntensity: { value: isMobile ? 2.0 : 4.0 }, // Lower intensity on mobile
                 time: { value: 0.0 }
             },
             vertexShader: `
@@ -364,10 +425,10 @@
                 varying vec3 vNormal;
                 varying vec3 vPosition;
                 void main() {
-                    float intensity = pow(0.9 - dot(vNormal, vec3(0, 0, 1)), 3.0) * glowIntensity;
+                    float intensity = pow(0.9 - dot(vNormal, vec3(0, 0, 1)), ${isMobile ? '2.0' : '3.0'}) * glowIntensity; // Simpler calculation on mobile
                     float pulse = 0.3 + 0.7 * abs(sin(time * 6.0));
                     vec3 color = mix(glowColor, accentColor, 0.2 * sin(time + vPosition.x));
-                    gl_FragColor = vec4(color * pulse, 1.0) + vec4(color * intensity * 5.0, 1.0);
+                    gl_FragColor = vec4(color * pulse, 1.0) + vec4(color * intensity * ${isMobile ? '3.0' : '5.0'}, 1.0);
                 }
             `,
             side: THREE.DoubleSide,
@@ -380,7 +441,7 @@
                 map: { value: null },
                 glowColor: { value: new THREE.Color(0xFFFFFF) },
                 accentColor: { value: new THREE.Color(0xFFFF99) },
-                glowIntensity: { value: 2.5 },
+                glowIntensity: { value: isMobile ? 1.5 : 2.5 }, // Lower intensity on mobile
                 time: { value: 0.0 }
             },
             vertexShader: `
@@ -424,7 +485,7 @@
             uniforms: {
                 glowColor: { value: new THREE.Color(0xFFFFFF) },
                 accentColor: { value: new THREE.Color(0xFFFF99) },
-                glowIntensity: { value: 4.0 },
+                glowIntensity: { value: isMobile ? 2.0 : 4.0 }, // Lower intensity on mobile
                 time: { value: 0.0 }
             },
             vertexShader: `
@@ -444,10 +505,10 @@
                 varying vec3 vNormal;
                 varying vec3 vPosition;
                 void main() {
-                    float intensity = pow(0.9 - dot(vNormal, vec3(0, 0, 1)), 3.0) * glowIntensity;
+                    float intensity = pow(0.9 - dot(vNormal, vec3(0, 0, 1)), ${isMobile ? '2.0' : '3.0'}) * glowIntensity; // Simpler calculation on mobile
                     float pulse = 0.5 + 0.5 * abs(sin(time * 5.0));
                     vec3 color = mix(glowColor, accentColor, 0.2);
-                    gl_FragColor = vec4(color * pulse, 1.0) + vec4(color * intensity * 3.0, 1.0);
+                    gl_FragColor = vec4(color * pulse, 1.0) + vec4(color * intensity * ${isMobile ? '2.0' : '3.0'}, 1.0);
                 }
             `,
             side: THREE.DoubleSide,
@@ -493,7 +554,7 @@
                 void main() {
                     vColor = color;
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = size;
+                    gl_PointSize = size * ${isMobile ? '0.5' : '1.0'}; // Smaller points on mobile
                 }
             `,
             fragmentShader: `
@@ -536,6 +597,9 @@
             const textureLoader = new THREE.TextureLoader();
             const textureUrl = estrellaFugaz.startsWith('data:image/') ? estrellaFugaz : defaultTextureUrl;
             textureLoader.load(textureUrl, (texture) => {
+                texture.generateMipmaps = true; // Enable mipmapping
+                texture.minFilter = THREE.LinearMipmapLinearFilter; // Use mipmaps for better scaling
+                texture.magFilter = THREE.LinearFilter;
                 const material = imageShaderMaterial.clone();
                 material.uniforms.map.value = texture;
                 cometImage = new THREE.Mesh(cometGeometry, material);
@@ -565,7 +629,6 @@
                 return;
             }
 
-            // Mostrar el loader
             idPanel.style.display = 'none';
             loader.style.display = 'flex';
 
@@ -611,13 +674,23 @@
                 const textureUrl = url.startsWith('data:image/') ? url : defaultTextureUrl;
                 try {
                     const texture = await new Promise((resolve, reject) => {
-                        textureLoader.load(textureUrl, resolve, undefined, reject);
+                        textureLoader.load(textureUrl, (tex) => {
+                            tex.generateMipmaps = true; // Enable mipmapping
+                            tex.minFilter = THREE.LinearMipmapLinearFilter;
+                            tex.magFilter = THREE.LinearFilter;
+                            resolve(tex);
+                        }, undefined, reject);
                     });
                     texturas.push(texture);
                 } catch (error) {
                     console.error(`Error al cargar textura ${textureUrl}:`, error);
                     const defaultTexture = await new Promise((resolve, reject) => {
-                        textureLoader.load(defaultTextureUrl, resolve, undefined, reject);
+                        textureLoader.load(defaultTextureUrl, (tex) => {
+                            tex.generateMipmaps = true;
+                            tex.minFilter = THREE.LinearMipmapLinearFilter;
+                            tex.magFilter = THREE.LinearFilter;
+                            resolve(tex);
+                        }, undefined, reject);
                     });
                     texturas.push(defaultTexture);
                 }
@@ -675,9 +748,9 @@
                 // Añadir anillos con imágenes, frases y puntos de estrellas
                 const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
                 const ringRadii = [1.6, 2.1, 2.6, 3.1, 3.6, 4.1, 4.6, 5.1, 5.6, 6.1, 6.6, 7.1];
-                const particlesPerRing = [130, 150, 170, 190, 210, 230, 250, 270, 300, 340, 390, 450];
-                const phrasesPerRing = [16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38];
-                const starsPerRing = [120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 350];
+                const particlesPerRing = isMobile ? [100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320] : [130, 150, 170, 190, 210, 230, 250, 270, 300, 340, 390, 450]; // Reduced for mobile
+                const phrasesPerRing = isMobile ? [12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34] : [16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38]; // Reduced for mobile
+                const starsPerRing = isMobile ? [90, 110, 130, 150, 170, 190, 210, 230, 250, 270, 290, 310] : [120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 350]; // Reduced for mobile
                 const ringThickness = 0.3;
 
                 ringRadii.forEach((ringRadius, index) => {
@@ -735,7 +808,7 @@
                         starColors[j * 3] = color.r;
                         starColors[j * 3 + 1] = color.g;
                         starColors[j * 3 + 2] = color.b;
-                        starSizes[j] = 0.05 + Math.random() * 0.05;
+                        starSizes[j] = isMobile ? (0.03 + Math.random() * 0.03) : (0.05 + Math.random() * 0.05); // Smaller sizes on mobile
                     }
                     const starGeometry = new THREE.BufferGeometry();
                     starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
@@ -747,7 +820,6 @@
                     ringGroups.push(ringGroup);
                 });
 
-                // Ocultar el loader cuando la visualización está lista
                 loader.style.display = 'none';
 
                 // Iniciar el conteo regresivo
@@ -767,40 +839,64 @@
             });
         }
 
-        // Control de movimiento de cámara
-        let isDragging = false;
-        let lastMouseY = 0;
-        const maxCameraY = 2;
-        let cameraY = 0;
-        document.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            lastMouseY = e.clientY;
-        });
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const deltaY = e.clientY - lastMouseY;
-            cameraY -= deltaY * 0.01;
-            cameraY = Math.max(-maxCameraY, Math.min(maxCameraY, cameraY));
-            camera.position.y = cameraY;
-            lastMouseY = e.clientY;
-        });
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-        document.addEventListener('mouseleave', () => {
-            isDragging = false;
-        });
+        // Control de movimiento de cámara (solo para escritorio)
+        if (!isMobile) {
+            let isDragging = false;
+            let lastMouseY = 0;
+            const maxCameraY = 2;
+            let cameraY = 0;
+            document.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                lastMouseY = e.clientY;
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const deltaY = e.clientY - lastMouseY;
+                cameraY -= deltaY * 0.01;
+                cameraY = Math.max(-maxCameraY, Math.min(maxCameraY, cameraY));
+                camera.position.y = cameraY;
+                lastMouseY = e.clientY;
+            });
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            document.addEventListener('mouseleave', () => {
+                isDragging = false;
+            });
 
-        // Control de zoom
-        document.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            camera.position.z += e.deltaY * 0.02;
-            camera.position.z = Math.max(0.1, Math.min(20, camera.position.z));
-        }, { passive: false });
+            // Control de zoom
+            document.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                camera.position.z += e.deltaY * 0.02;
+                camera.position.z = Math.max(0.1, Math.min(20, camera.position.z));
+            }, { passive: false });
+        }
 
-        // Animación
+        // Controles móviles
+        if (isMobile) {
+            const zoomSlider = document.getElementById('zoomSlider');
+            const moveSlider = document.getElementById('moveSlider');
+            zoomSlider.addEventListener('input', () => {
+                camera.position.z = parseFloat(zoomSlider.value);
+            });
+            moveSlider.addEventListener('input', () => {
+                camera.position.y = parseFloat(moveSlider.value);
+            });
+        }
+
+        // Animación con FPS limitado en móvil
         let time = 0;
-        function animate() {
+        let lastFrameTime = 0;
+        const targetFPS = isMobile ? 30 : 60; // Limit to 30 FPS on mobile
+        const frameInterval = 1000 / targetFPS;
+
+        function animate(currentTime) {
+            if (isMobile && (currentTime - lastFrameTime) < frameInterval) {
+                requestAnimationFrame(animate);
+                return;
+            }
+            lastFrameTime = currentTime;
+
             requestAnimationFrame(animate);
             time += 0.016;
             glowShaderMaterial.uniforms.time.value = time;
@@ -867,7 +963,7 @@
 
             renderer.render(scene, camera);
         }
-        animate();
+        animate(performance.now());
 
         // Ajustar tamaño de la ventana
         window.addEventListener('resize', () => {
