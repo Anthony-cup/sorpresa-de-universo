@@ -142,10 +142,10 @@
         }
         .mobile-controls {
             position: fixed;
-            bottom: 20px;
+            bottom: 5vw; /* Dynamic positioning for both orientations */
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
+            width: 90vw; /* Use viewport width for responsiveness */
             max-width: 400px;
             display: none;
             flex-direction: column;
@@ -185,7 +185,7 @@
         }
         @media (max-width: 600px) {
             .id-panel, .error-panel {
-                width: 95%;
+                width: 95vw;
             }
             .id-panel header, .error-panel header {
                 font-size: 1em;
@@ -211,6 +211,16 @@
             }
             .zoom-info {
                 display: none;
+            }
+        }
+        @media (orientation: landscape) {
+            .mobile-controls {
+                bottom: 2vw; /* Closer to bottom in landscape */
+                width: 70vw; /* Narrower in landscape */
+                max-width: 300px;
+            }
+            .mobile-controls div {
+                font-size: 12px; /* Smaller text in landscape */
             }
         }
     </style>
@@ -284,7 +294,7 @@
             'Mi amor eterno', 'Tú y yo', 'Por siempre', 'Eres mi luz',
             'Juntos forever', 'Mi corazón'
         ];
-        let fotosGirando = ['https://i.imgur.com/5f5gT1h.jpg'].slice(0, isMobile ? 3 : 5); // Limit textures on mobile
+        let fotosGirando = ['https://i.imgur.com/5f5gT1h.jpg'].slice(0, isMobile ? 3 : 5);
         let estrellaFugaz = 'https://i.imgur.com/5f5gT1h.jpg';
         const defaultTextureUrl = 'https://i.imgur.com/5f5gT1h.jpg';
 
@@ -310,8 +320,8 @@
 
         // Variables de la visualización
         const radius = 1;
-        const numCircles = isMobile ? 30 : 40; // Further reduced for mobile
-        const namesPerCircle = isMobile ? 30 : 50; // Further reduced for mobile
+        const numCircles = isMobile ? 30 : 40;
+        const namesPerCircle = isMobile ? 30 : 50;
         const textSize = 0.02;
         const textMeshes = [];
         const ringGroups = [];
@@ -330,7 +340,7 @@
         const flashGeometry = new THREE.PlaneGeometry(30, 30);
 
         // Fondo de estrellas
-        const starCount = isMobile ? 500 : 1000; // Further reduced for mobile
+        const starCount = isMobile ? 500 : 1000;
         const starGeometry = new THREE.BufferGeometry();
         const starPositions = new Float32Array(starCount * 3);
         const starColors = new Float32Array(starCount * 3);
@@ -349,7 +359,7 @@
         const stars = new THREE.Points(starGeometry, starMaterial);
         scene.add(stars);
 
-        // Efecto de aurora boreal (más simplificado para móvil)
+        // Efecto de aurora boreal (restaurado a la versión original)
         const auroraGeometry = new THREE.PlaneGeometry(200, 100);
         const auroraMaterial = new THREE.ShaderMaterial({
             uniforms: { time: { value: 0.0 } },
@@ -371,15 +381,17 @@
                     vec2 f = fract(p);
                     float a = rand(i);
                     float b = rand(i + vec2(1.0, 0.0));
+                    float c = rand(i + vec2(0.0, 1.0));
+                    float d = rand(i + vec2(1.0, 1.0));
                     vec2 u = f * f * (3.0 - 2.0 * f);
-                    return mix(a, b, u.x);
+                    return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
                 }
                 void main() {
                     vec2 p = vUv * vec2(1.0, 5.0) + vec2(0.0, time * 0.1);
-                    float n = noise(p * ${isMobile ? '1.0' : '2.0'}); // Even simpler noise on mobile
+                    float n = noise(p * 4.0);
                     float intensity = sin(vUv.y * 3.1416) * n;
                     vec3 color = mix(vec3(0.0, 0.8, 0.2), vec3(0.8, 0.0, 0.8), intensity);
-                    gl_FragColor = vec4(color, intensity * 0.3);
+                    gl_FragColor = vec4(color, intensity * 0.5);
                 }
             `,
             transparent: true,
@@ -393,7 +405,7 @@
 
         // Luces dinámicas
         const lights = [];
-        for (let i = 0; i < 2; i++) { // Reduced to 2 lights
+        for (let i = 0; i < 2; i++) {
             const light = new THREE.PointLight(0xFFFFFF, 0.5, 50);
             light.position.set(
                 (Math.random() - 0.5) * 20,
@@ -653,7 +665,6 @@
             idPanel.style.display = 'none';
             loader.style.display = 'flex';
 
-            // Timeout para detectar carga lenta o fallida
             const timeout = setTimeout(() => {
                 showErrorPanel('La carga está tomando demasiado tiempo. Presiona el botón para borrar el caché y reintentar.');
             }, 10000);
@@ -733,20 +744,17 @@
             }, 10000);
 
             try {
-                // Cargar texturas de fotosGirando
                 const texturasGirando = await cargarTexturas(fotosGirando);
 
                 const fontLoader = new THREE.FontLoader();
                 fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
                     clearTimeout(timeout);
-                    // Esfera principal con nombrePlaneta
                     const textGeometry = new THREE.TextGeometry(nombrePlaneta, {
                         font: font,
                         size: textSize,
                         height: 0.001
                     });
 
-                    // Círculos horizontales (latitudes)
                     for (let i = 0; i < numCircles; i++) {
                         const phi = Math.PI * i / (numCircles - 1);
                         const y = Math.cos(phi) * radius;
@@ -762,7 +770,6 @@
                         }
                     }
 
-                    // Círculos verticales (longitudes)
                     for (let i = 0; i < numCircles / 2; i++) {
                         const phi = 2 * Math.PI * i / (numCircles / 2);
                         for (let j = 0; j < namesPerCircle; j++) {
@@ -777,7 +784,6 @@
                         }
                     }
 
-                    // Añadir anillos con imágenes, frases y puntos de estrellas
                     const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
                     const ringRadii = [1.6, 2.1, 2.6, 3.1, 3.6, 4.1, 4.6, 5.1];
                     const particlesPerRing = isMobile ? [80, 90, 100, 110, 120, 130, 140, 150] : [100, 120, 140, 160, 180, 200, 220, 240];
@@ -791,7 +797,6 @@
                         const numPhrases = phrasesPerRing[index];
                         const numStars = starsPerRing[index];
 
-                        // Añadir imágenes
                         for (let j = 0; j < numImages; j++) {
                             const theta = 2 * Math.PI * j / numImages;
                             const x = ringRadius * Math.cos(theta);
@@ -806,7 +811,6 @@
                             ringGroup.add(imageMesh);
                         }
 
-                        // Añadir frases
                         for (let j = 0; j < numPhrases; j++) {
                             const theta = 2 * Math.PI * j / numPhrases;
                             const x = ringRadius * Math.cos(theta);
@@ -824,7 +828,6 @@
                             ringGroup.add(phraseMesh);
                         }
 
-                        // Añadir puntos de estrellas
                         const starPositions = new Float32Array(numStars * 3);
                         const starColors = new Float32Array(numStars * 3);
                         const starSizes = new Float32Array(numStars);
@@ -853,10 +856,9 @@
                     });
 
                     loader.style.display = 'none';
-                    aurora.visible = true; // Re-enable aurora after loading
+                    aurora.visible = true;
                     isLoading = false;
 
-                    // Iniciar el conteo regresivo
                     let countdown = 20;
                     const countdownElement = document.getElementById('countdown');
                     countdownElement.textContent = `Meteorito en ${countdown} segundos!`;
@@ -922,6 +924,25 @@
             moveSlider.addEventListener('input', () => {
                 camera.position.y = parseFloat(moveSlider.value);
             });
+
+            // Ajustar controles al cambiar orientación
+            function adjustMobileControls() {
+                const mobileControls = document.getElementById('mobileControls');
+                if (window.innerWidth > window.innerHeight) {
+                    // Landscape
+                    mobileControls.style.width = '70vw';
+                    mobileControls.style.maxWidth = '300px';
+                    mobileControls.style.bottom = '2vw';
+                } else {
+                    // Portrait
+                    mobileControls.style.width = '90vw';
+                    mobileControls.style.maxWidth = '400px';
+                    mobileControls.style.bottom = '5vw';
+                }
+            }
+            window.addEventListener('resize', adjustMobileControls);
+            window.addEventListener('orientationchange', adjustMobileControls);
+            adjustMobileControls(); // Inicializar posición
         }
 
         // Animación con FPS limitado en móvil
@@ -942,28 +963,25 @@
             glowShaderMaterial.uniforms.time.value = time;
             imageShaderMaterial.uniforms.time.value = time;
             shootingStarMaterial.uniforms.time.value = time;
-            if (!isMobile) auroraMaterial.uniforms.time.value = time; // Only update aurora on desktop
+            auroraMaterial.uniforms.time.value = time;
             ringStarMaterial.uniforms.time.value = time;
             if (flashMaterial.uniforms) flashMaterial.uniforms.time.value = time;
 
-            // Animar luces dinámicas (menos frecuente)
-            if (!isMobile || time % 0.1 < 0.016) { // Update lights less often on mobile
+            if (!isMobile || time % 0.1 < 0.016) {
                 lights.forEach((light, index) => {
                     light.position.x += Math.sin(time * 0.3 + index) * 0.05;
                     light.position.y += Math.cos(time * 0.3 + index) * 0.05;
                 });
             }
 
-            // Textos apuntan a la cámara
-            if (!isMobile || time % 0.05 < 0.016) { // Update less often on mobile
+            if (!isMobile || time % 0.05 < 0.016) {
                 textMeshes.forEach(mesh => {
                     mesh.lookAt(camera.position);
                 });
             }
 
-            // Imágenes, frases y estrellas apuntan a la cámara y giran
             ringGroups.forEach((group) => {
-                group.rotation.y += isMobile ? 0.0005 : 0.001; // Slower rotation on mobile
+                group.rotation.y += isMobile ? 0.0005 : 0.001;
                 group.children.forEach(mesh => {
                     mesh.lookAt(camera.position);
                 });
@@ -974,7 +992,6 @@
                 cometImage.position.y = Math.sin(time * 2) * 0.2;
             }
 
-            // Manejo de la estrella fugaz
             if (shootingStar && eventTriggered) {
                 const elapsed = time - eventStartTime;
                 const t = elapsed / 2;
@@ -993,7 +1010,6 @@
                 }
             }
 
-            // Manejo del destello
             if (flashPlane) {
                 const flashTime = time - eventStartTime - 2;
                 if (flashTime > 0) {
